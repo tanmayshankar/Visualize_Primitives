@@ -13,11 +13,15 @@ from geometry_msgs.msg import Point
 import numpy as npy
 import copy
 
-def publish_trajectory(traj):
+def publish_trajectory(traj,traj_shoulder):
 
 	traj_pub = rospy.Publisher("trajectory_markers",Marker,queue_size=10)
+	traj_pub_shoulder = rospy.Publisher("shoulder_trajectory_markers",Marker,queue_size=10)
 	rate = rospy.Rate(10)
 	traj_marker = Marker()
+	shoulder_marker = Marker()
+
+
 	# traj_marker.header.frame_id = "rgb_optical_frame"
 	traj_marker.header.frame_id = "traj_frame"
 	traj_marker.ns = "Trajectory_Line_Strip"
@@ -30,21 +34,37 @@ def publish_trajectory(traj):
 	traj_marker.color.b = 1.0
 	traj_marker.color.a = 1.0
 
+	shoulder_marker.header.frame_id = "traj_frame"
+	shoulder_marker.ns = "Trajectory_Shoulder"
+	shoulder_marker.id = 1
+	shoulder_marker.action = Marker.ADD
+	shoulder_marker.type = Marker.LINE_STRIP
+	shoulder_marker.scale.x = 0.0001
+	shoulder_marker.scale.y = 0.0001
+	shoulder_marker.scale.z = 0.0001
+	shoulder_marker.color.g = 1.0
+	shoulder_marker.color.a = 1.0
+
+
 	p = Point()
 	for i in range(len(traj)):
-		p.x = traj[i,0]
+		p.x = -traj[i,0]
 		p.y = traj[i,1]
 		p.z = traj[i,2]
-		# print(traj_marker.points)
-		# print("Printing a New Point", p)
-		# traj_marker.points.append([traj[i,0],traj[i,1],traj[i,2]])
+
 		traj_marker.points.append(copy.deepcopy(p))
-		# print(traj_marker.points)
-		# traj_marker.points.push_back(p)
-	# print("PRINTING THE MARKER: ", traj_marker)
+
+	for i in range(len(traj_shoulder)):
+		p.x = -traj_shoulder[i,0]
+		p.y = traj_shoulder[i,1]
+		p.z = traj_shoulder[i,2]
+
+		shoulder_marker.points.append(copy.deepcopy(p))
+
 	while not rospy.is_shutdown():
 		traj_marker.header.stamp = rospy.Time.now()
 		traj_pub.publish(traj_marker)
+		traj_pub_shoulder.publish(shoulder_marker)
 		rate.sleep()
 
 def main(argv):
@@ -54,12 +74,13 @@ def main(argv):
 
 	traj_ind = 8
 	path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Hand_{0}.npy".format(traj_ind))
+	path_sh = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Shoulder_{0}.npy".format(traj_ind))
 	# path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Right_Hand_{0}.npy".format(traj_ind))
 	print(path)
 	traj = npy.load(path)
-
+	traj_shoulder = npy.load(path_sh)
 	try:
-		publish_trajectory(traj/100000)
+		publish_trajectory(traj/100000,traj_shoulder/100000)
 	except rospy.ROSInterruptException:
 		pass
 
