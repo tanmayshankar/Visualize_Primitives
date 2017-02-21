@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+import roslib
+import sys
+import rospy
+import cv2
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
+from cv_bridge import CvBridge, CvBridgeError
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
+from geometry_msgs.msg import Point
+import message_filters
+import os
+import numpy as npy
+
+class publish_video_skeleton:
+
+	def __init__(self, FILE_DIR, num_frames,left_hand,left_shoulder):
+
+		self.num_frames = num_frames
+		self.FILE_DIR = FILE_DIR
+		self.left_hand_traj = left_hand
+		self.left_shoulder_traj = left_shoulder
+
+		self.rgb_pub = rospy.Publisher("rgb_image",Image,queue_size=10)
+		self.depth_pub = rospy.Publisher("depth_image",Image,queue_size=10)
+		self.rgb_info_pub = rospy.Publisher("camera_info_rgb",CameraInfo,queue_size=10)
+		self.depth_info_pub = rospy.Publisher("camera_info_depth",CameraInfo,queue_size=10)
+
+		self.lh_hand_pub = rospy.Publisher("left_hand_pose",Marker,queue_size=10)
+		self.lh_shoulder_pub = rospy.Publisher("left_hand_shoulder_pose",Marker,queue_size=10)
+
+		self.bridge = CvBridge()
+
+		self.rgb_info = CameraInfo()
+		self.rgb_info.header.frame_id = "rgb_optical_frame"
+		self.rgb_info.height = 480
+		self.rgb_info.width = 640
+		self.rgb_info.distortion_model = 'plumb_bob'
+		self.rgb_info.D = [0.0, 0.0, 0.0, 0.0, 0.0]
+		self.rgb_info.K = [525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0]
+		self.rgb_info.R = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+		self.rgb_info.P = [525.0, 0.0, 319.5, 0.0, 0.0, 525.0, 239.5, 0.0, 0.0, 0.0, 1.0, 0.0]
+
+		self.depth_info = CameraInfo()
+		self.depth_info.header.frame_id = "depth_optical_frame"
+		self.depth_info.height = 480
+		self.depth_info.width = 640
+		self.depth_info.distortion_model = 'plumb_bob'
+		self.depth_info.D = [0.0, 0.0, 0.0, 0.0, 0.0]
+		self.depth_info.K = [525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0]
+		self.depth_info.R = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+		self.depth_info.P = [525.0, 0.0, 319.5, 0.0, 0.0, 525.0, 239.5, 0.0, 0.0, 0.0, 1.0, 0.0]
+
+		self.rate = rospy.Rate(20)
+
+		self.left_hand_marker = Marker()
+		self.left_hand_marker.header.frame_id = "traj_frame"
+		self.left_hand_marker.ns = "LH_Line_Strip"
+		self.left_hand_marker.id = 0
+		self.left_hand_marker.action = Marker.ADD
+		self.left_hand_marker.type = Marker.CUBE
+		self.left_hand_marker.scale.x = 0.001
+		self.left_hand_marker.scale.y = 0.001
+		self.left_hand_marker.scale.z = 0.001
+		self.left_hand_marker.color.g = 1.0
+		self.left_hand_marker.color.a = 1.0
+		self.left_hand_marker.pose.orientation.x = 0.0;
+		self.left_hand_marker.pose.orientation.y = 0.0;
+		self.left_hand_marker.pose.orientation.z = 0.0;
+		self.left_hand_marker.pose.orientation.w = 1.0;
+
+		self.left_shoulder_marker = Marker()
+		self.left_shoulder_marker.header.frame_id = "traj_frame"
+		self.left_shoulder_marker.ns = "LS_Line_Strip"
+		self.left_shoulder_marker.id = 1
+		self.left_shoulder_marker.action = Marker.ADD
+		self.left_shoulder_marker.type = Marker.CUBE
+		self.left_shoulder_marker.scale.x = 0.001
+		self.left_shoulder_marker.scale.y = 0.001
+		self.left_shoulder_marker.scale.z = 0.001
+		self.left_shoulder_marker.color.r = 1.0
+		self.left_shoulder_marker.color.a = 1.0
+		self.left_shoulder_marker.pose.orientation.x = 0.0;
+		self.left_shoulder_marker.pose.orientation.y = 0.0;
+		self.left_shoulder_marker.pose.orientation.z = 0.0;
+		self.left_shoulder_marker.pose.orientation.w = 1.0;
+
+	def publish_images(self):
+
+		for i in range(1,self.num_frames):
+
+			# Publish Images:
+			img = cv2.imread(os.path.join(self.FILE_DIR,"RGB_{0}.png".format(i)))
+			imgd = cv2.imread(os.path.join(self.FILE_DIR,"Depth_{0}.png".format(i)))					
+
+			imgd = cv2.cvtColor(imgd,cv2.COLOR_BGR2GRAY)
+			imgd = npy.uint16(imgd)
+			
+			img_rgb = self.bridge.cv2_to_imgmsg(img,"bgr8")
+			img_rgb.header.frame_id = "rgb_optical_frame"
+			img_rgb.header.seq = i
+			img_rgb.header.stamp = rospy.Time.now()
+			img_rgb.height = 480
+			img_rgb.width = 640
+
+			img_depth = self.bridge.cv2_to_imgmsg(imgd,"passthrough")
+			img_depth.header.frame_id = "depth_optical_frame"
+			img_depth.header.seq = i
+			img_depth.header.stamp = rospy.Time.now()
+			img_depth.height = 480
+			img_depth.width = 640
+
+			self.rgb_info.header.seq = i
+			self.rgb_info.header.stamp = rospy.Time.now()
+
+			self.depth_info.header.seq = i
+			self.depth_info.header.stamp = rospy.Time.now()
+
+			# Skeleton Pose Information:
+			self.left_hand_marker.pose.position.x = self.left_hand_traj[i,0]
+			self.left_hand_marker.pose.position.y = -self.left_hand_traj[i,1]
+			self.left_hand_marker.pose.position.z = self.left_hand_traj[i,2]
+
+			# Skeleton Pose Information:
+			self.left_shoulder_marker.pose.position.x = self.left_shoulder_traj[i,0]
+			self.left_shoulder_marker.pose.position.y = -self.left_shoulder_traj[i,1]
+			self.left_shoulder_marker.pose.position.z = self.left_shoulder_traj[i,2]
+
+			try:
+				self.rgb_pub.publish(img_rgb)
+				self.depth_pub.publish(img_depth)
+				self.rgb_info_pub.publish(self.rgb_info)
+				self.depth_info_pub.publish(self.depth_info)
+
+				self.lh_hand_pub.publish(self.left_hand_marker)
+				self.lh_shoulder_pub.publish(self.left_shoulder_marker)
+
+			except CvBridgeError as e:
+				print(e)
+
+			self.rate.sleep()
+
+
+def main(argv):
+
+	rospy.init_node('Publish_Video_Skeleton')
+
+	traj_ind = 8
+
+	image_filelist = ['taking_food/0510180532', 'taking_food/0510180218', 'taking_food/0510180342', 'taking_medicine/1204143959', 'taking_medicine/1204144120', 'taking_medicine/1204142858', 'microwaving_food/1204150828', 'microwaving_food/1204151136','microwaving_food/1204150645', 'cleaning_objects/0510181415', 'cleaning_objects/0510181310', 'cleaning_objects/0510181236', 'making_cereal/1204142227', 'making_cereal/1204142616','making_cereal/1204142055', 'making_cereal/1204142500','stacking_objects/1204145234', 'stacking_objects/1204144736', 'stacking_objects/1204144410', 'unstacking_objects/1204145630','unstacking_objects/1204145527', 'unstacking_objects/1204145902', 'arranging_objects/0510175554', 'arranging_objects/0510175431', 'arranging_objects/0510175411', 'having_meal/0510182057', 'having_meal/0510182019', 'having_meal/0510182137', 'picking_objects/0510175829', 'picking_objects/0510175855','picking_objects/0510175921']
+	image_file = os.path.join("/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/",image_filelist[traj_ind])
+	# file = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/arranging_objects/0510175411"
+	num_frames = 648
+
+	TRAJ_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Primitive_Library/Subject1"
+	lh_traj_path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Hand_{0}.npy".format(traj_ind))
+	ls_traj_path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Shoulder_{0}.npy".format(traj_ind))
+
+	lh_traj = npy.load(lh_traj_path)/100000
+	lh_shoulder_traj = npy.load(ls_traj_path)/100000
+
+	video_skel = publish_video_skeleton(image_file,num_frames,lh_traj,lh_shoulder_traj)
+
+	try:
+		# rospy.spin()
+		video_skel.publish_images()
+	except rospy.ROSInterruptException:
+		pass
+	# except KeyboardInterrupt:
+	# 	print("Shutting Down.")
+
+if __name__ == '__main__':
+	main(sys.argv)	
+
