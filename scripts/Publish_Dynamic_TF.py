@@ -21,6 +21,7 @@ class dynamic_tf:
 		self.transform = global_tf
 		self.tf_cam_rgb = tf.TransformBroadcaster()
 		self.tf_cam_depth = tf.TransformBroadcaster()
+		self.tf_rgb_traj = tf.TransformBroadcaster()
 
 		self.rate = rospy.Rate(100.)
 
@@ -38,6 +39,8 @@ class dynamic_tf:
 
 			self.tf_cam_rgb.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","rgb_optical_frame")
 			self.tf_cam_depth.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","depth_optical_frame")
+
+			self.tf_rgb_traj.sendTransform((0.,0.,0.),(0.,0.,0.,1.),rospy.Time.now(),"rgb_optical_frame","traj_frame")
 			self.rate.sleep()
 
 def main(argv):
