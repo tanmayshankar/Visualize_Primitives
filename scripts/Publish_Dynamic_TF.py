@@ -37,10 +37,17 @@ class dynamic_tf:
 
 		while not(rospy.is_shutdown()):
 
-			self.tf_cam_rgb.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","rgb_optical_frame")
-			self.tf_cam_depth.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","depth_optical_frame")
+			# self.tf_cam_rgb.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","rgb_optical_frame")
+			# self.tf_cam_depth.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"cam_frame","depth_optical_frame")
 
-			self.tf_rgb_traj.sendTransform((0.,0.,0.),(0.,0.,0.,1.),rospy.Time.now(),"rgb_optical_frame","traj_frame")
+			# self.tf_rgb_traj.sendTransform((0.,0.,0.),(0.,0.,0.,1.),rospy.Time.now(),"rgb_optical_frame","traj_frame")
+
+			self.tf_cam_rgb.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"rgb_optical_frame","cam_frame")
+			self.tf_cam_depth.sendTransform((self.translation),(self.quaternion),rospy.Time.now(),"depth_optical_frame","cam_frame")
+
+			self.tf_rgb_traj.sendTransform((0.,0.,0.004),(0.,0.,0.,1.),rospy.Time.now(),"traj_frame","rgb_optical_frame")			
+			self.tf_rgb_traj.sendTransform((0.,0.,0.),(0.,0.,0.,1.),rospy.Time.now(),"traj_frame","rgb_optical_frame")
+
 			self.rate.sleep()
 
 def main(argv):
@@ -50,8 +57,10 @@ def main(argv):
 	FILE_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_annotations"
 	transforms = npy.load(os.path.join(FILE_DIR,"Global_Transforms.npy"))
 
-
-	traj_ind = 13	
+	# traj_ind = 13	
+	# traj_ind = 10
+	
+	traj_ind = int(sys.argv[1])
 	tf_inst = dynamic_tf(transforms[traj_ind])
 
 	try:

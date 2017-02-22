@@ -12,6 +12,7 @@ from geometry_msgs.msg import Point
 import message_filters
 import os
 import numpy as npy
+from geometry_msgs.msg import PointStamped
 
 class publish_video_skeleton:
 
@@ -29,6 +30,8 @@ class publish_video_skeleton:
 
 		self.lh_hand_pub = rospy.Publisher("left_hand_pose",Marker,queue_size=10)
 		self.lh_shoulder_pub = rospy.Publisher("left_hand_shoulder_pose",Marker,queue_size=10)
+
+		self.frame_number_pub = rospy.Publisher("frame_number",PointStamped,queue_size=10)
 
 		self.bridge = CvBridge()
 
@@ -52,7 +55,7 @@ class publish_video_skeleton:
 		self.depth_info.R = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
 		self.depth_info.P = [525.0, 0.0, 319.5, 0.0, 0.0, 525.0, 239.5, 0.0, 0.0, 0.0, 1.0, 0.0]
 
-		self.rate = rospy.Rate(20)
+		self.rate = rospy.Rate(30)
 
 		self.left_hand_marker = Marker()
 		self.left_hand_marker.header.frame_id = "traj_frame"
@@ -88,7 +91,23 @@ class publish_video_skeleton:
 
 	def publish_images(self):
 
-		for i in range(1,self.num_frames):
+		buffer_value = 20
+
+		for j in range(1,self.num_frames+2*buffer_value+1):
+
+			if (j<=buffer_value):
+				i=1
+			elif (j>=self.num_frames+buffer_value):
+				i=self.num_frames
+			else:
+				i=j-buffer_value+1
+			# print("BUFFERED",j,i)
+
+			frame_num_pt = PointStamped()
+			frame_num_pt.header.stamp = rospy.Time.now()
+			frame_num_pt.point.x = i
+
+		# for i in range(1,self.num_frames+1):
 
 			# Publish Images:
 			img = cv2.imread(os.path.join(self.FILE_DIR,"RGB_{0}.png".format(i)))
@@ -100,6 +119,7 @@ class publish_video_skeleton:
 			img_rgb = self.bridge.cv2_to_imgmsg(img,"bgr8")
 			img_rgb.header.frame_id = "rgb_optical_frame"
 			img_rgb.header.seq = i
+
 			img_rgb.header.stamp = rospy.Time.now()
 			img_rgb.height = 480
 			img_rgb.width = 640
@@ -118,14 +138,14 @@ class publish_video_skeleton:
 			self.depth_info.header.stamp = rospy.Time.now()
 
 			# Skeleton Pose Information:
-			self.left_hand_marker.pose.position.x = self.left_hand_traj[i,0]
-			self.left_hand_marker.pose.position.y = -self.left_hand_traj[i,1]
-			self.left_hand_marker.pose.position.z = self.left_hand_traj[i,2]
+			self.left_hand_marker.pose.position.x = self.left_hand_traj[i-1,0]
+			self.left_hand_marker.pose.position.y = -self.left_hand_traj[i-1,1]
+			self.left_hand_marker.pose.position.z = self.left_hand_traj[i-1,2]
 
 			# Skeleton Pose Information:
-			self.left_shoulder_marker.pose.position.x = self.left_shoulder_traj[i,0]
-			self.left_shoulder_marker.pose.position.y = -self.left_shoulder_traj[i,1]
-			self.left_shoulder_marker.pose.position.z = self.left_shoulder_traj[i,2]
+			self.left_shoulder_marker.pose.position.x = self.left_shoulder_traj[i-1,0]
+			self.left_shoulder_marker.pose.position.y = -self.left_shoulder_traj[i-1,1]
+			self.left_shoulder_marker.pose.position.z = self.left_shoulder_traj[i-1,2]
 
 			try:
 				self.rgb_pub.publish(img_rgb)
@@ -135,9 +155,12 @@ class publish_video_skeleton:
 
 				self.lh_hand_pub.publish(self.left_hand_marker)
 				self.lh_shoulder_pub.publish(self.left_shoulder_marker)
+				self.frame_number_pub.publish(frame_num_pt)
 
 			except CvBridgeError as e:
+			# except:
 				print(e)
+				# pass
 
 			self.rate.sleep()
 
@@ -146,14 +169,20 @@ def main(argv):
 
 	rospy.init_node('Publish_Video_Skeleton')
 
-	traj_ind = 8
-
-	image_filelist = ['taking_food/0510180532', 'taking_food/0510180218', 'taking_food/0510180342', 'taking_medicine/1204143959', 'taking_medicine/1204144120', 'taking_medicine/1204142858', 'microwaving_food/1204150828', 'microwaving_food/1204151136','microwaving_food/1204150645', 'cleaning_objects/0510181415', 'cleaning_objects/0510181310', 'cleaning_objects/0510181236', 'making_cereal/1204142227', 'making_cereal/1204142616','making_cereal/1204142055', 'making_cereal/1204142500','stacking_objects/1204145234', 'stacking_objects/1204144736', 'stacking_objects/1204144410', 'unstacking_objects/1204145630','unstacking_objects/1204145527', 'unstacking_objects/1204145902', 'arranging_objects/0510175554', 'arranging_objects/0510175431', 'arranging_objects/0510175411', 'having_meal/0510182057', 'having_meal/0510182019', 'having_meal/0510182137', 'picking_objects/0510175829', 'picking_objects/0510175855','picking_objects/0510175921']
-	image_file = os.path.join("/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/",image_filelist[traj_ind])
-	# file = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/arranging_objects/0510175411"
-	num_frames = 648
-
+	video_ind = int(sys.argv[1])
+	# print(video_ind)
+	# image_filelist = ['taking_food/0510180532', 'taking_food/0510180218', 'taking_food/0510180342', 'taking_medicine/1204143959', 'taking_medicine/1204144120', 'taking_medicine/1204142858', 'microwaving_food/1204150828', 'microwaving_food/1204151136','microwaving_food/1204150645', 'cleaning_objects/0510181415', 'cleaning_objects/0510181310', 'cleaning_objects/0510181236', 'making_cereal/1204142227', 'making_cereal/1204142616','making_cereal/1204142055', 'making_cereal/1204142500','stacking_objects/1204145234', 'stacking_objects/1204144736', 'stacking_objects/1204144410', 'unstacking_objects/1204145630','unstacking_objects/1204145527', 'unstacking_objects/1204145902', 'arranging_objects/0510175554', 'arranging_objects/0510175431', 'arranging_objects/0510175411', 'having_meal/0510182057', 'having_meal/0510182019', 'having_meal/0510182137', 'picking_objects/0510175829', 'picking_objects/0510175855','picking_objects/0510175921']
+	FILE_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/"
 	TRAJ_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Primitive_Library/Subject1"
+
+	image_filelist = npy.load(os.path.join(FILE_DIR,"Image_File_List.npy"))
+	number_frames = npy.load(os.path.join(FILE_DIR,"Number_Images_Sorted.npy")).astype(int)
+	sorting_indices = npy.load(os.path.join(FILE_DIR,"Sorting_Indices.npy"))
+
+	image_file = os.path.join(FILE_DIR,image_filelist[video_ind])
+	num_frames = number_frames[video_ind]
+	traj_ind = sorting_indices[video_ind]
+
 	lh_traj_path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Hand_{0}.npy".format(traj_ind))
 	ls_traj_path = os.path.join(TRAJ_DIR,"Traj_{0}".format(traj_ind),"Original_Left_Shoulder_{0}.npy".format(traj_ind))
 
@@ -165,10 +194,10 @@ def main(argv):
 	try:
 		# rospy.spin()
 		video_skel.publish_images()
-	except rospy.ROSInterruptException:
-		pass
-	# except KeyboardInterrupt:
-	# 	print("Shutting Down.")
+	# except rospy.ROSInterruptException:
+		# pass
+	except KeyboardInterrupt:
+		print("Shutting Down.")
 
 if __name__ == '__main__':
 	main(sys.argv)	
