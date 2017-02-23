@@ -1,5 +1,0 @@
-<launch>
-	<include file="$(find Viz_Primitives)/launch/publish_tf.launch"/>
-	<include file="$(find Viz_Primitives)/launch/register_and_pointcloud.launch"/>
-	
-</launch>
