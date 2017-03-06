@@ -10,5 +10,4 @@
 
 	<node pkg="Visualize_Primitives" type="Publish_Video_Skeleton.py" name="Publish_Video_Skeleton" args="$(arg video_index)" output="screen"/>
 
-
 </launch>
