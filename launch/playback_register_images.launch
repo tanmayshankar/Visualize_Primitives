@@ -1,0 +1,18 @@
+<launch>
+	
+	<arg name="base_name"         default="kinect2"/>
+	<arg name="nodelet_manager"   default="$(arg base_name)"/>
+	<arg name="queue_size"        default="5"/>
+	<arg name="respawn"           default="true"/>
+	<arg name="start_manager"     default="true"/>
+
+	<node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" if="$(arg start_manager)" output="screen"/>
+
+	<node pkg="nodelet" type="nodelet" name="kinect2_points_xyzrgb_hd" args="load depth_image_proc/point_cloud_xyzrgb $(arg nodelet_manager)" respawn="$(arg respawn)">
+		<remap from="rgb/image_rect_color"        to="rgb_image" />
+		<remap from="rgb/camera_info"             to="camera_info_rgb" />
+		<remap from="depth_registered/image_rect" to="depth_image"/>
+		<param name="queue_size" type="int" value="$(arg queue_size)"/>
+	</node>
+
+</launch>

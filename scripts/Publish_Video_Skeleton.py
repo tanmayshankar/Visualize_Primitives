@@ -55,7 +55,7 @@ class publish_video_skeleton:
 		self.depth_info.R = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
 		self.depth_info.P = [525.0, 0.0, 319.5, 0.0, 0.0, 525.0, 239.5, 0.0, 0.0, 0.0, 1.0, 0.0]
 
-		self.rate = rospy.Rate(30)
+		self.rate = rospy.Rate(20)
 
 		self.left_hand_marker = Marker()
 		self.left_hand_marker.header.frame_id = "traj_frame"
@@ -111,7 +111,7 @@ class publish_video_skeleton:
 
 			# Publish Images:
 			img = cv2.imread(os.path.join(self.FILE_DIR,"RGB_{0}.png".format(i)))
-			imgd = cv2.imread(os.path.join(self.FILE_DIR,"Depth_{0}.png".format(i)))					
+			imgd = cv2.imread(os.path.join(self.FILE_DIR,"Depth_{0}.png".format(i)),-1)					
 
 			imgd = cv2.cvtColor(imgd,cv2.COLOR_BGR2GRAY)
 			imgd = npy.uint16(imgd)

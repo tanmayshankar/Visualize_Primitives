@@ -1,0 +1,40 @@
+<launch>
+		<arg name="manager" default="manager"/>
+		<node pkg="nodelet" type="nodelet" name="manager" args="manager"
+				output="screen" launch-prefix="" /> 
+
+	<arg name="respawn" default="false" />
+	<arg		 if="$(arg respawn)" name="bond" value="" />
+	<arg unless="$(arg respawn)" name="bond" value="--no-bond" />
+
+	<!--TODO: Instead "rgb", "depth" and "depth_registered" should be remapped as
+			 necessary by top-level launch file-->
+	<arg name="rgb"							default="rgb" />
+	<arg name="depth"						default="depth" />
+	<arg name="depth_registered" default="depth_registered" />
+	
+	<!--For distinguishing multiple register/XYZRGB nodelets. Default fails if rgb
+			 or depth contains a namespace.-->
+	<arg name="suffix" default="$(arg depth)_$(arg rgb)" />
+	<!-- Registration nodelet, projecting depth to RGB camera -->
+
+
+	<!-- Explicit topic remappings, shouldn't need all of these -->
+			<!-- <remap from="depth_registered/image_rect" to="depth_registered" /> -->
+<!-- 	<node pkg="nodelet" type="nodelet" name="register_$(arg suffix)" args="load depth_image_proc/register $(arg manager) $(arg bond)" respawn="$(arg respawn)">		
+
+		<remap from="rgb/camera_info"						 to="camera_info_rgb" />
+		<remap from="depth/camera_info"					 to="camera_info_depth" />
+		<remap from="depth/image_rect"						to="depth_image" />
+
+	</node>
+ -->
+	 <!-- Instead publish registered XYZRGB point cloud -->
+	<node pkg="nodelet" type="nodelet" name="points_xyzrgb_$(arg suffix)" args="load depth_image_proc/point_cloud_xyzrgb $(arg manager) $(arg bond)" respawn="$(arg respawn)">		
+		<remap from="rgb/image_rect_color"			to="/kinect2/hd/image_color_rect" />
+		<remap from="rgb/camera_info"				to="/kinect2/hd/camera_info"/>
+		<remap from="depth_registered/image_rect" 	to="/kinect2/hd/image_depth_rect" />
+		<!-- <remap from="depth_registered/points"		 to="$(arg depth_registered)/points" /> -->
+	</node>
+
+</launch>

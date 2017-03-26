@@ -1,0 +1,13 @@
+<launch>
+
+	<arg name="video_index" default="13" />
+
+	<node pkg="Visualize_Primitives" type="Annotated_Object_Coords.py" name="Publish_Object_Coords" args="$(arg video_index)" output="screen" cwd="node"/>
+
+	<node pkg="Visualize_Primitives" type="Publish_Dynamic_TF.py" name="Publish_Dynamic_TF" args="$(arg video_index)" output="screen"/>
+
+	<include file="$(find Visualize_Primitives)/launch/register_and_pointcloud.launch"/>
+
+	<node pkg="Visualize_Primitives" type="Publish_Video_Skeleton.py" name="Publish_Video_Skeleton" args="$(arg video_index)" output="screen"/>
+
+</launch>

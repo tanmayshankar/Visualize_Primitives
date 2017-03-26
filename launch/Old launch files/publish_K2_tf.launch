@@ -1,0 +1,10 @@
+<launch>
+
+ 	<!-- <node pkg="tf" type="static_transform_publisher" name="tf_pub" args="-0.0522318 -0.0000977 -0.0007138 0 0 0 1 depth_optical_frame rgb_optical_frame 100"/> -->
+
+ 	 <!-- <node pkg="tf" type="static_transform_publisher" name="tf_pub" args="-5.0737341920575281e-02 2.0893739678470733e-04 8.5665556686668023e-04 0 0 0 1 rgb_optical_frame depth_optical_frame 100"/> -->
+
+ 	 <node pkg="tf" type="static_transform_publisher" name="tf_pub" args="-5.3404696633386789e-02 1.3946304803673395e-04 4.3839200723898306e-03 0 0 0 1 kinect2_rgb_optical_frame kinect2_ir_optical_frame 100"/>
+
+ 	 <!-- <node pkg="tf" type="static_transform_publisher" name="tf_pub" args="0 0 0 0 0 0 1 rgb_optical_frame depth_optical_frame 100"/> -->
+</launch>

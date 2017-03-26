@@ -42,6 +42,7 @@ def publish_images(FILE_DIR, num_frames):
 
 	for i in range(1,num_frames):
 		img = cv2.imread(os.path.join(FILE_DIR,"RGB_{0}.png".format(i)))
+		# imgd = cv2.imread(os.path.join(FILE_DIR,"Depth_{0}.png".format(i)),-1)		
 		imgd = cv2.imread(os.path.join(FILE_DIR,"Depth_{0}.png".format(i)))		
 		# print(imgd.dtype)
 

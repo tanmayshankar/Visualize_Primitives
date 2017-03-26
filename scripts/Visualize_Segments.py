@@ -73,6 +73,8 @@ def main(argv):
 	# FILE_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/Subject1_rgbd_images/"
 	TRAJ_DIR = "/home/tanmay/catkin_ws/src/Visualize_Primitives/Data/Smooth_Trajectories/"
 
+	SEG_DIR = "/home/tanmay/Research/Code/ActionPrimitives/Data/Cornell_Data/"
+
 	# sorting_indices = npy.load(os.path.join(FILE_DIR,"Sorting_Indices.npy"))
 	
 	# # traj_ind = sorting_indices[int(sys.argv[1])]

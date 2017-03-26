@@ -111,7 +111,7 @@ class publish_video_skeleton:
 
 			# Publish Images:
 			img = cv2.imread(os.path.join(self.FILE_DIR,"RGB_{0}.png".format(i)))
-			imgd = cv2.imread(os.path.join(self.FILE_DIR,"Depth_{0}.png".format(i)))					
+			imgd = cv2.imread(os.path.join(self.FILE_DIR,"Depth_{0}.png".format(i)),-1)					
 
 			imgd = cv2.cvtColor(imgd,cv2.COLOR_BGR2GRAY)
 			imgd = npy.uint16(imgd)

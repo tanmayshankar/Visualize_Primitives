@@ -1,0 +1,20 @@
+<launch>
+
+	<!-- <arg name="video_index" default="13" /> -->
+	<arg name="num_frames" default="236"/>
+
+<!-- 	<node pkg="Visualize_Primitives" type="Annotated_Object_Coords.py" name="Publish_Object_Coords" args="$(arg video_index)" output="screen" cwd="node"/> -->
+	<arg name="FILE_DIR" default="/home/tanmay/catkin_ws/src/Visualize_Primitives/Data/K2_Demos/Grid_Demo/D1/"/>
+
+	<node pkg="Visualize_Primitives" type="Publish_Calib_EX.py" name="Publish_Calib_EX" output="screen"/>
+
+	<include file="$(find Visualize_Primitives)/launch/playback_register_images.launch"/>
+
+	<node pkg="Visualize_Primitives" type="Publish_Vid_Skel_Traj_CPM.py" name="Publish_Vid_Skel_Traj_CPM" args="$(arg FILE_DIR) $(arg num_frames)" output="screen"/>
+
+	<!-- <node pkg="Visualize_Primitives" type="Visualize_Trajectories.py" name="Visualize_Trajectories" args="$(arg video_index)" output="screen"/> -->
+
+	<!-- <node pkg="Visualize_Primitives" type="Visualize_Smooth_Traj.py" name="Viz_Traj" args="$(arg video_index)" output="screen"/> -->
+
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find Visualize_Primitives)/config/Viz_Grid_Demo.rviz"/>
+</launch>
